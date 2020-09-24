@@ -1,0 +1,53 @@
+name: glarea-example
+base: core18
+adopt-info: glarea-example
+
+grade: stable
+confinement: strict
+license: CC0-1.0
+
+apps:
+  glarea-example:
+    command: glarea
+    desktop: io.bassi.Glarea.desktop
+    common-id: io.bassi.Glarea.desktop
+    extensions: [gnome-3-34]
+    plugs:
+      - opengl
+
+  glxinfo:
+    command: usr/bin/glxinfo
+    extensions: [gnome-3-34]
+    plugs:
+      - opengl
+
+parts:
+  glxinfo:
+    plugin: nil
+    stage-packages:
+      - mesa-utils
+
+  glarea-example:
+    plugin: make
+    source: .
+    parse-info:
+      - io.bassi.Glarea.appdata.xml
+    build-packages:
+      - libc6-dev
+      - git
+    override-build: |
+      set -xe
+      version="$(git describe --always --dirty)"
+      snapcraftctl set-version "$version"
+      make -j$(nproc)
+      sed -i -E "s|^Icon=(.*)|Icon=\${SNAP}/io.bassi.Glarea.png|g" io.bassi.Glarea.desktop
+      install -m0755 glarea -t $SNAPCRAFT_PART_INSTALL
+      install -m0644 io.bassi.Glarea.desktop -t $SNAPCRAFT_PART_INSTALL
+      install -D -m0644 io.bassi.Glarea.png -t $SNAPCRAFT_PART_INSTALL
+      install -D -m0644 io.bassi.Glarea.appdata.xml -t $SNAPCRAFT_PART_INSTALL
+
+slots:
+  dbus-daemon:
+    interface: dbus
+    bus: session
+    name: io.bassi.Glarea
